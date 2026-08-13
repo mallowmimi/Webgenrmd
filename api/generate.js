@@ -34,9 +34,6 @@ export default async function handler(req, res) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // MODEL VERSI STABIL & TERBARU
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const userPrompt = req.body.prompt || 'Gabungkan gambar-gambar ini secara harmonis untuk promosi produk affiliate.';
     const files = req.files || [];
@@ -63,10 +60,40 @@ Ketentuan:
 
     const contents = [systemPrompt, userPrompt, ...imageParts];
 
-    const result = await model.generateContent(contents);
-    const responseText = await result.response.text();
+    // DAFTAR MODEL YANG AKAN DICOBA SATU PER SATU DARI YANG TERBAIK
+    const candidateModels = [
+      'gemini-2.5-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-pro',
+      'gemini-pro'
+    ];
 
-    return res.status(200).json({ result: responseText });
+    let resultText = null;
+    let lastError = null;
+
+    // SISTEM OTOMATIS MENCOBA SATU PER SATU
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(contents);
+        const response = await result.response;
+        resultText = response.text();
+        
+        // Jika berhasil dapat respon, keluar dari loop
+        if (resultText) break;
+      } catch (err) {
+        console.warn(`Model ${modelName} gagal: ${err.message}. Mencoba model berikutnya...`);
+        lastError = err;
+      }
+    }
+
+    if (resultText) {
+      return res.status(200).json({ result: resultText });
+    } else {
+      throw new Error(lastError ? lastError.message : 'Semua model Gemini gagal merespons.');
+    }
+
   } catch (error) {
     console.error('Error:', error);
     return res.status(500).json({ error: error.message || 'Terjadi kesalahan pada server.' });
