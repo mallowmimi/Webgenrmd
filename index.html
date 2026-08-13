@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Image v1.4 - Affiliate Creator</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --accent-color: #4a90e2;
+            --accent-hover: #357abd;
+            --border-color: #e2e8f0;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px 10px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        /* Header Style dengan Logo */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header-title-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header-logo {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .header .subtitle {
+            margin-top: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        /* Modul Karakter Tersimpan */
+        .character-storage-box {
+            background: #eef6ff;
+            border: 1px dashed var(--accent-color);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .char-info { display: flex; align-items: center; gap: 10px; }
+        .char-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-color); background: #fff; }
+        .char-text { font-size: 12px; }
+        .char-text strong { display: block; font-size: 13px; color: var(--text-primary); }
+
+        .btn-small { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; background: var(--accent-color); color: white; cursor: pointer; }
+
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+
+        input[type="file"], select, input[type="text"] {
+            width: 100%; padding: 10px 12px;
+            border: 1px solid var(--border-color); border-radius: 8px;
+            box-sizing: border-box; background-color: #fdfdfd; font-size: 14px;
+        }
+
+        .checkbox-group { display: flex; gap: 15px; margin-top: 6px; flex-wrap: wrap; }
+        .checkbox-group label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+        .image-preview-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .preview-box { position: relative; width: 100%; padding-top: 100%; border-radius: 8px; overflow: hidden; border: 1px dashed var(--border-color); background: #fafafa; }
+        .preview-box img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .preview-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: #fff; font-size: 10px; text-align: center; padding: 2px 0; }
+
+        .conditional-section { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 18px; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .btn-primary { background-color: var(--accent-color); color: white; }
+        .btn-reset { background-color: #f1f5f9; color: var(--danger-color); border: 1px solid var(--border-color); flex: 0.4; }
+
+        #outputBox { margin-top: 20px; padding: 15px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; display: none; }
+        .footer { text-align: center; margin-top: 25px; font-size: 12px; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header v1.4 -->
+    <div class="header">
+        <div class="header-title-wrapper">
+            <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+            <h1>Generate Image v1.4</h1>
+        </div>
+        <div class="subtitle">
+            Designed by : RejoMandiriDigital<br>
+            Powered by : Gemini
+        </div>
+    </div>
+
+    <!-- FITUR BARU: Wajah Karakter Tersimpan -->
+    <div class="character-storage-box">
+        <div class="char-info">
+            <img id="savedCharImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='%237f8c8d'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>" class="char-avatar" alt="Avatar">
+            <div class="char-text">
+                <strong id="savedCharStatus">Belum ada Wajah Karakter</strong>
+                <span id="savedCharSub">Simpan agar tidak perlu upload terus</span>
+            </div>
+        </div>
+        <button type="button" class="btn-small" onclick="document.getElementById('savedCharInput').click()">Set Wajah</button>
+        <input type="file" id="savedCharInput" accept="image/*" style="display:none" onchange="saveCharacterImage(event)">
+    </div>
+
+    <form id="generatorForm">
+        <!-- Opsi Gunakan Wajah Tersimpan -->
+        <div class="form-group" id="useSavedCharGroup" style="display:none;">
+            <label style="color: var(--accent-color); cursor:pointer;">
+                <input type="checkbox" id="useSavedCharCheckbox" checked> Gunakan Wajah Karakter Tersimpan
+            </label>
+        </div>
+
+        <!-- 1. Upload Gambar Produk/Lainnya -->
+        <div class="form-group">
+            <label id="uploadLabel">Upload Gambar Produk (Maks 3):</label>
+            <input type="file" id="images" accept="image/*" multiple onchange="handleImageUpload(event)">
+            <div class="image-preview-container" id="previewContainer"></div>
+        </div>
+
+        <!-- 2. PILIH KATEGORI PRODUK -->
+        <div class="form-group">
+            <label for="productCategory">Kategori Produk Affiliate:</label>
+            <select id="productCategory" onchange="updateFormByCategory()">
+                <option value="footwear">👟 Sepatu / Sandal / Boots</option>
+                <option value="agri">🌾 Pertanian (Pupuk/Herbisida/Bibit)</option>
+                <option value="homeliving">🏠 Home Living & Alat Rumah</option>
+                <option value="fashion">👕 Fashion (Baju/Jaket/Topi)</option>
+            </select>
+        </div>
+
+        <!-- 3. PILIHAN SHOT / ANGEL KAMERA -->
+        <div class="form-group conditional-section">
+            <label>Fokus Tampilan / Kamera (Shot Type):</label>
+            <div class="checkbox-group" id="shotTypeContainer">
+                <!-- Diisi otomatis oleh JavaScript -->
+            </div>
+        </div>
+
+        <!-- 4. MODE INSTRUKSI (AUTO / MANUAL) -->
+        <div class="form-group">
+            <label>Mode Setting Prompt:</label>
+            <div class="checkbox-group">
+                <label><input type="radio" name="mode" value="auto" checked onchange="toggleMode()"> Otomatis (Rekomendasi System)</label>
+                <label><input type="radio" name="mode" value="manual" onchange="toggleMode()"> Manual (Setting Sendiri)</label>
+            </div>
+        </div>
+
+        <!-- OPSI MANUAL -->
+        <div id="manualSection" class="conditional-section" style="display: none;">
+            <div class="form-group">
+                <label for="locationSelect">Pilihan Lokasi Latar Belakang:</label>
+                <select id="locationSelect" onchange="checkCustomLocation()">
+                    <!-- Diisi via JS sesuai kategori -->
+                </select>
+                <input type="text" id="customLocationInput" placeholder="Ketik lokasi kustom..." style="display:none; margin-top:8px;">
+            </div>
+
+            <div class="form-group" id="outfitSettingGroup">
+                <label for="shirtCustom">Setting Warna/Motif Baju Karakter:</label>
+                <input type="text" id="shirtCustom" placeholder="Contoh: Kaos Polos Hitam, Kemeja Motif Daun...">
+            </div>
+
+            <div class="form-group">
+                <label for="additionalInstruction">Catatan Tambahan (Opsional):</label>
+                <input type="text" id="additionalInstruction" placeholder="Contoh: Pencahayaan sore hari, pose memegang produk...">
+            </div>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="btn-group">
+            <button type="button" class="btn-reset" onclick="resetForm()">Reset</button>
+            <button type="submit" class="btn-primary">Proses Sekarang</button>
+        </div>
+    </form>
+
+    <div id="outputBox"></div>
+
+    <!-- Footer v1.4 -->
+    <div class="footer">
+        Designed by : RejoMandiriDigital v1.4
+    </div>
+</div>
+
+<script>
+    let savedCharacterBase64 = localStorage.getItem('rmd_saved_character') || null;
+
+    // Inisialisasi Karakter Tersimpan saat halaman dibuka
+    function initSavedCharacter() {
+        if (savedCharacterBase64) {
+            document.getElementById('savedCharImg').src = savedCharacterBase64;
+            document.getElementById('savedCharStatus').innerText = "Wajah Karakter Aktif";
+            document.getElementById('savedCharSub').innerText = "Tersimpan di sistem browser";
+            document.getElementById('useSavedCharGroup').style.display = "block";
+        }
+    }
+
+    // Fungsi Simpan / Ganti Wajah Karakter
+    function saveCharacterImage(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            savedCharacterBase64 = evt.target.result;
+            localStorage.setItem('rmd_saved_character', savedCharacterBase64);
+            initSavedCharacter();
+            alert("Wajah karakter berhasil disimpan!");
+        };
+        reader.readAsDataURL(file);
+    }
+
+    const categoryConfigs = {
+        footwear: {
+            shots: [
+                { id: "full_body", label: "Full Body (Pakai Wajah)", checked: true },
+                { id: "knee_down", label: "Lutut ke Bawah (POV Kaki)", checked: false }
+            ],
+            locations: ["Jalanan Kota / Streetwear", "Cafe Outdoor", "Studio Foto Clean", "Teras Rumah", "Ketik Sendiri..."],
+            keepShirt: false
+        },
+        agri: {
+            shots: [
+                { id: "full_body", label: "Full Body (Pakai Wajah)", checked: true },
+                { id: "hand_holding", label: "POV Tangan / Pegang Produk", checked: false }
+            ],
+            locations: ["Kebun / Sawah", "Halaman Depan Rumah", "Greenhouse", "Studio Minimalis", "Ketik Sendiri..."],
+            keepShirt: false
+        },
+        homeliving: {
+            shots: [
+                { id: "full_body", label: "Full Body (Pakai Wajah)", checked: true },
+                { id: "hand_holding", label: "POV Tangan / Pegang Produk", checked: false }
+            ],
+            locations: ["Ruang Tamu", "Dapur Minimalis", "Kamar Tidur", "Teras Rumah", "Ketik Sendiri..."],
+            keepShirt: false
+        },
+        fashion: {
+            shots: [
+                { id: "full_body", label: "Full Body (Model Fashion)", checked: true },
+                { id: "upper_body", label: "Half Body / Close Up Produk", checked: false }
+            ],
+            locations: ["Studio Foto Editorial", "Outdoor Aesthetic", "Cafe Modern", "Ketik Sendiri..."],
+            keepShirt: true
+        }
+    };
+
+    function updateFormByCategory() {
+        const cat = document.getElementById('productCategory').value;
+        const config = categoryConfigs[cat];
+
+        const shotContainer = document.getElementById('shotTypeContainer');
+        shotContainer.innerHTML = "";
+        config.shots.forEach(s => {
+            shotContainer.innerHTML += `
+                <label>
+                    <input type="radio" name="shotType" value="${s.label}" ${s.checked ? 'checked' : ''}> ${s.label}
+                </label>
+            `;
+        });
+
+        const locSelect = document.getElementById('locationSelect');
+        locSelect.innerHTML = "";
+        config.locations.forEach(loc => {
+            locSelect.innerHTML += `<option value="${loc}">${loc}</option>`;
+        });
+
+        const outfitGroup = document.getElementById('outfitSettingGroup');
+        if (config.keepShirt) {
+            outfitGroup.style.display = "none";
+        } else {
+            outfitGroup.style.display = "block";
+        }
+
+        checkCustomLocation();
+    }
+
+    function checkCustomLocation() {
+        const val = document.getElementById('locationSelect').value;
+        const customInput = document.getElementById('customLocationInput');
+        customInput.style.display = val.includes("Ketik Sendiri") ? "block" : "none";
+    }
+
+    function toggleMode() {
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        document.getElementById('manualSection').style.display = mode === 'manual' ? 'block' : 'none';
+    }
+
+    function handleImageUpload(e) {
+        const files = Array.from(e.target.files);
+        const container = document.getElementById('previewContainer');
+        container.innerHTML = "";
+
+        if (files.length > 3) {
+            alert("Maksimal 3 gambar!");
+            e.target.value = "";
+            return;
+        }
+
+        files.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const box = document.createElement('div');
+                box.className = 'preview-box';
+                box.innerHTML = `<img src="${evt.target.result}"><div class="preview-label">Produk ${index + 1}</div>`;
+                container.appendChild(box);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function resetForm() {
+        document.getElementById('generatorForm').reset();
+        document.getElementById('previewContainer').innerHTML = "";
+        document.getElementById('outputBox').style.display = "none";
+        updateFormByCategory();
+        toggleMode();
+    }
+
+    // Helper Convert Base64 back to Blob File
+    function base64ToBlob(base64) {
+        const parts = base64.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const rawLength = raw.length;
+        const uInt8Array = new Uint8Array(rawLength);
+        for (let i = 0; i < rawLength; ++i) {
+            uInt8Array[i] = raw.charCodeAt(i);
+        }
+        return new Blob([uInt8Array], { type: contentType });
+    }
+
+    document.getElementById('generatorForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const files = document.getElementById('images').files;
+        const outputBox = document.getElementById('outputBox');
+        const useSavedChar = document.getElementById('useSavedCharCheckbox')?.checked;
+
+        if (files.length < 1 && (!savedCharacterBase64 || !useSavedChar)) {
+            alert("Upload minimal 1 gambar produk!");
+            return;
+        }
+
+        outputBox.style.display = "block";
+        outputBox.innerText = "Gemini sedang meracik prompt affiliate terbaik... Mohon tunggu...";
+
+        const category = document.getElementById('productCategory').value;
+        const shotType = document.querySelector('input[name="shotType"]:checked').value;
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const config = categoryConfigs[category];
+
+        let promptConfig = `[KATEGORI PRODUK: ${category.toUpperCase()}]\n- Tipe Shot: ${shotType}\n`;
+
+        if (config.keepShirt) {
+            promptConfig += `- ATURAN BAJU: WAJIB SAMA PERSIS dengan gambar produk fashion yang di-upload! Jangan ubah warna/motif baju.\n`;
+        } else {
+            promptConfig += `- ATURAN BAJU: Baju karakter boleh berganti warna/motif agar bervariasi, tapi WAJAH KARAKTER HARUS KONSISTEN BERSAMA GAMBAR UTAMA.\n`;
+        }
+
+        if (mode === 'auto') {
+            promptConfig += `- Mode: OTOMATIS (Sistem menentukan lokasi & latar belakang yang paling estetik & relevan sesuai produk).\n`;
+        } else {
+            let loc = document.getElementById('locationSelect').value;
+            if (loc.includes("Ketik Sendiri")) {
+                loc = document.getElementById('customLocationInput').value || "Lokasi Custom";
+            }
+            const outfitText = document.getElementById('shirtCustom').value || "Bervariasi estetik";
+            const extra = document.getElementById('additionalInstruction').value || "-";
+
+            promptConfig += `- Mode: MANUAL\n- Lokasi Setting: ${loc}\n- Detail Outfit: ${outfitText}\n- Catatan Tambahan: ${extra}\n`;
+        }
+
+        const formData = new FormData();
+
+        // Masukkan foto karakter tersimpan jika diaktifkan
+        if (savedCharacterBase64 && useSavedChar) {
+            const charBlob = base64ToBlob(savedCharacterBase64);
+            formData.append('images', charBlob, 'wajah_karakter_utama.jpg');
+        }
+
+        // Masukkan foto produk yang diupload
+        for (let file of files) {
+            formData.append('images', file);
+        }
+
+        formData.append('prompt', promptConfig);
+
+        try {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                outputBox.innerText = data.result;
+            } else {
+                outputBox.innerText = "Error: " + (data.error || "Gagal memproses.");
+            }
+        } catch (err) {
+            outputBox.innerText = "Terjadi kesalahan koneksi server: " + err.message;
+        }
+    });
+
+    initSavedCharacter();
+    updateFormByCategory();
+</script>
+
+</body>
+</html>
