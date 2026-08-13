@@ -30,17 +30,16 @@ export default async function handler(req, res) {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'API Key belum dipasang di Environment Variables Vercel.' });
+      return res.status(500).json({ error: 'API Key belum dipasang di Vercel.' });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // MENGGUNAKAN GEMINI-1.5-FLASH STANDAR YANG PALING STABIL
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const userPrompt = req.body.prompt || 'Gabungkan gambar-gambar ini secara harmonis untuk promosi produk affiliate.';
+    const userPrompt = req.body.prompt || 'Buatkan prompt promosi affiliate.';
     const files = req.files || [];
-
-    if (!files || files.length === 0) {
-      return res.status(400).json({ error: 'Tidak ada gambar yang diunggah.' });
-    }
 
     const imageParts = files.map((file) => ({
       inlineData: {
@@ -49,53 +48,17 @@ export default async function handler(req, res) {
       },
     }));
 
-    const systemPrompt = `Kamu adalah Prompt Engineer profesional untuk AI Image Generator (seperti Midjourney / Flux / Imagen).
-Tugasmu adalah menganalisis gambar produk dan/atau foto karakter yang diberikan, lalu buatkan 1 PROMPT BAHASA INGGRIS yang sangat detail untuk menghasilkan foto promosi produk yang realistis dan estetik.
+    const promptText = `Bertindaklah sebagai AI Prompt Engineer profesional untuk konten e-commerce. Analisis gambar ini dan berikan 1 prompt Bahasa Inggris yang sangat detail untuk image generator: ${userPrompt}`;
 
-Ketentuan:
-1. Pertahankan ciri wajah/karakter jika ada foto karakter tersimpan.
-2. Tampilkan detail produk secara akurat.
-3. Sertakan detail pencahayaan dan gaya fotografi (photorealistic, 8k, soft lighting, commercial product photo).
-4. Hasil keluaran HANYA berupa teks prompt Bahasa Inggris siap pakai.`;
+    const contents = [promptText, ...imageParts];
 
-    const contents = [systemPrompt, userPrompt, ...imageParts];
+    const result = await model.generateContent(contents);
+    const response = await result.response;
+    const text = response.text();
 
-    // DAFTAR MODEL YANG AKAN DICOBA SATU PER SATU DARI YANG TERBAIK
-    const candidateModels = [
-      'gemini-2.5-flash',
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-pro',
-      'gemini-pro'
-    ];
-
-    let resultText = null;
-    let lastError = null;
-
-    // SISTEM OTOMATIS MENCOBA SATU PER SATU
-    for (const modelName of candidateModels) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(contents);
-        const response = await result.response;
-        resultText = response.text();
-        
-        // Jika berhasil dapat respon, keluar dari loop
-        if (resultText) break;
-      } catch (err) {
-        console.warn(`Model ${modelName} gagal: ${err.message}. Mencoba model berikutnya...`);
-        lastError = err;
-      }
-    }
-
-    if (resultText) {
-      return res.status(200).json({ result: resultText });
-    } else {
-      throw new Error(lastError ? lastError.message : 'Semua model Gemini gagal merespons.');
-    }
-
+    return res.status(200).json({ result: text });
   } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ error: error.message || 'Terjadi kesalahan pada server.' });
+    console.error('Error detail:', error);
+    return res.status(500).json({ error: error.message });
   }
 }
