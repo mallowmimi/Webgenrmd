@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await runMiddleware(req, res, upload.array('images', 4));
+    await runMiddleware(req, res, upload.array('images', 5));
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -35,11 +35,15 @@ export default async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // UPDATE MODEL NAME: Menggunakan gemini-2.5-flash (atau gemini-1.5-flash-latest)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    // MODEL VERSI STABIL & TERBARU
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    const promptUser = req.body.prompt || '';
+    const userPrompt = req.body.prompt || 'Gabungkan gambar-gambar ini secara harmonis untuk promosi produk affiliate.';
     const files = req.files || [];
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'Tidak ada gambar yang diunggah.' });
+    }
 
     const imageParts = files.map((file) => ({
       inlineData: {
@@ -48,16 +52,16 @@ export default async function handler(req, res) {
       },
     }));
 
-    const systemPrompt = `Kamu adalah seorang Prompt Engineer ahli untuk AI Image Generator (seperti Midjourney / Flux / Imagen) khusus untuk konten e-commerce & affiliate marketing.
-Tugasmu adalah menganalisis gambar produk dan/atau karakter yang di-upload, lalu membuatkan 1 PROMPT BAHASA INGGRIS yang sangat detail dan presisi untuk menghasilkan foto produk promosi yang realistis, estetik, dan berkonversi tinggi.
+    const systemPrompt = `Kamu adalah Prompt Engineer profesional untuk AI Image Generator (seperti Midjourney / Flux / Imagen).
+Tugasmu adalah menganalisis gambar produk dan/atau foto karakter yang diberikan, lalu buatkan 1 PROMPT BAHASA INGGRIS yang sangat detail untuk menghasilkan foto promosi produk yang realistis dan estetik.
 
-Aturan Pembuatan Prompt:
-1. Pertahankan fitur wajah/karakter utama jika ada foto karakter tersimpan/diupload.
-2. Tampilkan produk dengan detail yang akurat.
-3. Sertakan detail lighting (photorealistic, soft daylight, studio lighting, 8k resolution, cinematic).
-4. Hasil keluaran HARUS HANYA PROMPT BAHASA INGGRIS siap pakai untuk image generator.`;
+Ketentuan:
+1. Pertahankan ciri wajah/karakter jika ada foto karakter tersimpan.
+2. Tampilkan detail produk secara akurat.
+3. Sertakan detail pencahayaan dan gaya fotografi (photorealistic, 8k, soft lighting, commercial product photo).
+4. Hasil keluaran HANYA berupa teks prompt Bahasa Inggris siap pakai.`;
 
-    const contents = [systemPrompt, promptUser, ...imageParts];
+    const contents = [systemPrompt, userPrompt, ...imageParts];
 
     const result = await model.generateContent(contents);
     const responseText = await result.response.text();
