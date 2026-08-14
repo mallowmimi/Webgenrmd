@@ -33,15 +33,15 @@ export default async function handler(req, res) {
     const userPrompt = req.body.prompt || 'Buatkan prompt promosi affiliate yang menarik.';
     const files = req.files || [];
 
-    // Menyusun parts (teks + gambar)
-    const parts = [
+    // Menyusun isi konten (teks + gambar)
+    const contentParts = [
       {
         text: `Bertindaklah sebagai AI Prompt Engineer profesional e-commerce. Analisis gambar dan berikan 1 prompt Bahasa Inggris detail: ${userPrompt}`
       }
     ];
 
     files.forEach((file) => {
-      parts.push({
+      contentParts.push({
         inline_data: {
           mime_type: file.mimetype,
           data: file.buffer.toString('base64')
@@ -51,27 +51,32 @@ export default async function handler(req, res) {
 
     const url = `https://generativelanguage.googleapis.com/v1/interactions?key=${apiKey}`;
 
-    // FORMAT STRUKTUR MURNI SESUAI SPESIFIKASI INTERACTIONS API
+    // STRUKTUR TURN[] RESMI: ADA ROLE DAN ADA PARTS
     const apiRes = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'gemini-2.5-flash',
-        input: parts
+        input: [
+          {
+            role: 'user',
+            parts: contentParts
+          }
+        ]
       })
     });
 
     const data = await apiRes.json();
 
     if (apiRes.ok) {
-      // Ekstrak hasil teks dari respons
+      // Mengambil teks dari struktur output Interactions API
       let resultText = '';
       if (data.outputs && data.outputs.length > 0) {
-        const firstOutput = data.outputs[0];
-        if (firstOutput.text) {
-          resultText = firstOutput.text;
-        } else if (firstOutput.parts) {
-          resultText = firstOutput.parts.map(p => p.text).join('\n');
+        const out = data.outputs[0];
+        if (out.text) {
+          resultText = out.text;
+        } else if (out.parts) {
+          resultText = out.parts.map(p => p.text).join('\n');
         }
       }
 
