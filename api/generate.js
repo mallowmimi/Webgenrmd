@@ -45,17 +45,17 @@ export default async function handler(req, res) {
 
     const promptText = `Bertindaklah sebagai AI Prompt Engineer profesional e-commerce. Analisis gambar dan berikan 1 prompt Bahasa Inggris detail: ${userPrompt}`;
 
-    // Daftar model SDK resmi yang tersedia di Free Tier
+    // DAFTAR MODEL BARU TAHUN 2026 UNTUK FREE TIER
     const candidateModels = [
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-flash-001',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro'
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-lite',
+      'gemini-2.0-flash-exp'
     ];
 
     let lastError = null;
 
-    // Loop otomatis cari model mana yang AKTIF di kunci API kamu
+    // Loop otomatis cari model 2.x mana yang aktif di kunci API kamu
     for (const modelName of candidateModels) {
       try {
         const model = genAI.getGenerativeModel({ model: modelName });
@@ -63,17 +63,14 @@ export default async function handler(req, res) {
         const responseText = result.response.text();
 
         if (responseText) {
-          // Berhasil! Langsung kembalikan jawaban
           return res.status(200).json({ result: responseText });
         }
       } catch (err) {
         lastError = err.message;
-        // Jika model ini tidak ditemukan/error, dia otomatis lanjut coba model berikutnya
       }
     }
 
-    // Jika semua model gagal
-    return res.status(500).json({ error: `Semua model SDK gagal. Error terakhir: ${lastError}` });
+    return res.status(500).json({ error: `Semua model gagal. Error terakhir: ${lastError}` });
 
   } catch (error) {
     console.error('Error detail:', error);
