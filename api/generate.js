@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import multer from 'multer';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -27,77 +28,52 @@ export default async function handler(req, res) {
 
     const apiKey = (process.env.GEMINI_API_KEY || '').trim();
     if (!apiKey) {
-      return res.status(500).json({ error: 'API Key belum dipasang di Environment Variables Vercel.' });
+      return res.status(500).json({ error: 'API Key belum dipasang di Vercel.' });
     }
 
+    const genAI = new GoogleGenerativeAI(apiKey);
     const userPrompt = req.body.prompt || 'Buatkan prompt promosi affiliate yang menarik.';
     const files = req.files || [];
 
-    // Menyusun isi konten gambar dan teks
-    const parts = [
-      {
-        text: `Bertindaklah sebagai AI Prompt Engineer profesional e-commerce. Analisis gambar dan berikan 1 prompt Bahasa Inggris detail: ${userPrompt}`
-      }
+    // Konversi gambar ke format inlineData SDK
+    const imageParts = files.map((file) => ({
+      inlineData: {
+        data: file.buffer.toString('base64'),
+        mimeType: file.mimetype,
+      },
+    }));
+
+    const promptText = `Bertindaklah sebagai AI Prompt Engineer profesional e-commerce. Analisis gambar dan berikan 1 prompt Bahasa Inggris detail: ${userPrompt}`;
+
+    // Daftar model SDK resmi yang tersedia di Free Tier
+    const candidateModels = [
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-flash-001',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro'
     ];
 
-    files.forEach((file) => {
-      parts.push({
-        inline_data: {
-          mime_type: file.mimetype,
-          data: file.buffer.toString('base64')
+    let lastError = null;
+
+    // Loop otomatis cari model mana yang AKTIF di kunci API kamu
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent([promptText, ...imageParts]);
+        const responseText = result.response.text();
+
+        if (responseText) {
+          // Berhasil! Langsung kembalikan jawaban
+          return res.status(200).json({ result: responseText });
         }
-      });
-    });
-
-    const url = `https://generativelanguage.googleapis.com/v1/interactions?key=${apiKey}`;
-
-    // FORMAT 'input' YANG DIMINTA GOOGLE (DENGAN FIELD TYPE ATAU ROLE YANG BENAR)
-    const apiRes = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'gemini-2.5-flash',
-        input: [
-          {
-            type: 'user_content',
-            content: {
-              role: 'user',
-              parts: parts
-            }
-          }
-        ]
-      })
-    });
-
-    let data = await apiRes.json();
-
-    // JIKA FORMAT STEP ERROR, FALLBACK KE FORMAT SIMPLE TURN
-    if (!apiRes.ok && data.error?.message?.includes('type')) {
-      const fallbackRes = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gemini-2.5-flash',
-          input: [
-            {
-              role: 'user',
-              parts: parts
-            }
-          ]
-        })
-      });
-      data = await fallbackRes.json();
+      } catch (err) {
+        lastError = err.message;
+        // Jika model ini tidak ditemukan/error, dia otomatis lanjut coba model berikutnya
+      }
     }
 
-    if (data.outputs && data.outputs.length > 0) {
-      const out = data.outputs[0];
-      const resultText = out.text || (out.parts ? out.parts.map(p => p.text).join('\n') : null) || JSON.stringify(out);
-      return res.status(200).json({ result: resultText });
-    } else if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-      return res.status(200).json({ result: data.candidates[0].content.parts[0].text });
-    } else {
-      return res.status(500).json({ error: `Google API Response: ${data.error?.message || JSON.stringify(data)}` });
-    }
+    // Jika semua model gagal
+    return res.status(500).json({ error: `Semua model SDK gagal. Error terakhir: ${lastError}` });
 
   } catch (error) {
     console.error('Error detail:', error);
