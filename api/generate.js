@@ -33,14 +33,15 @@ export default async function handler(req, res) {
     const userPrompt = req.body.prompt || 'Buatkan prompt promosi affiliate yang menarik.';
     const files = req.files || [];
 
-    const parts = [
+    // Format masukan untuk Interactions API
+    const inputs = [
       {
         text: `Bertindaklah sebagai AI Prompt Engineer profesional e-commerce. Analisis gambar dan berikan 1 prompt Bahasa Inggris detail: ${userPrompt}`
       }
     ];
 
     files.forEach((file) => {
-      parts.push({
+      inputs.push({
         inline_data: {
           mime_type: file.mimetype,
           data: file.buffer.toString('base64')
@@ -48,35 +49,25 @@ export default async function handler(req, res) {
       });
     });
 
-    // Menggunakan ENDPOINT STABLE (v1) bukan v1beta
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    // Menggunakan ENDPOINT INTERACTIONS API TERBARU SESUAI INSTRUKSI GOOGLE
+    const url = `https://generativelanguage.googleapis.com/v1/interactions?key=${apiKey}`;
 
     const apiRes = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: parts }]
+        model: 'gemini-2.5-flash',
+        input: inputs
       })
     });
 
     const data = await apiRes.json();
 
-    if (apiRes.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-      return res.status(200).json({ result: data.candidates[0].content.parts[0].text });
+    if (apiRes.ok && data.outputs && data.outputs[0]?.text) {
+      return res.status(200).json({ result: data.outputs[0].text });
+    } else if (data.choices && data.choices[0]?.message?.content) {
+      return res.status(200).json({ result: data.choices[0].content });
     } else {
-      // Fallback cadangan jika v1 gemini-2.5-flash gagal, coba gemini-1.5-flash di v1
-      const fallbackUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-      const fbRes = await fetch(fallbackUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: parts }] })
-      });
-      const fbData = await fbRes.json();
-
-      if (fbRes.ok && fbData.candidates && fbData.candidates[0]?.content?.parts[0]?.text) {
-        return res.status(200).json({ result: fbData.candidates[0].content.parts[0].text });
-      }
-
       return res.status(500).json({ error: `Google API Error: ${data.error?.message || JSON.stringify(data)}` });
     }
 
